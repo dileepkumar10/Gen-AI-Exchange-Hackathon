@@ -1,7 +1,7 @@
 {
   "name": "ai-startup-analyst",
   "version": "1.0.0",
-  "description": "AI-powered startup evaluation platform",
+  "description": "Multi-Agent AI System for Venture Capital Analysis",
   "main": "src/index.js",
   "scripts": {
     "start": "react-scripts start",
@@ -10,14 +10,17 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.263.1",
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^3.11.174",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "lucide-react": "^0.263.1"
+    "react-scripts": "5.0.1"
   },
   "devDependencies": {
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11"
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7"
   },
   "browserslist": {
     "production": [

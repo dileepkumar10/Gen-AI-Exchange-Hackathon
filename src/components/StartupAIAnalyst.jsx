@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Mic, Users, TrendingUp, Lightbulb, DollarSign, Star, Download, Settings, Play, Pause, Activity, Globe, BarChart3, Zap, HelpCircle, Building2 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import DemoScript from './DemoScript';
 import LetsVentureIntegration from './LetsVentureIntegration';
 import './animations.css';
@@ -45,14 +46,17 @@ const StartupAIAnalyst = () => {
     return null;
   };
 
-  // Mock startup data for demonstration
-  const mockStartupData = {
-    companyName: "EcoTech Solutions",
-    founders: ["Sarah Chen", "Mike Rodriguez"],
-    sector: "CleanTech",
-    stage: "Pre-Series A",
-    foundedYear: "2022",
-    location: "San Francisco, CA"
+  // Default startup data when no files uploaded
+  const getDefaultStartupData = (fileName = 'Unknown Company') => {
+    const companyName = fileName.replace(/\.(pdf|pptx|docx|ppt|doc)$/i, '').replace(/[-_]/g, ' ');
+    return {
+      companyName: companyName || 'Startup Analysis',
+      founders: ['Founder information not extracted'],
+      sector: 'Sector not identified',
+      stage: 'Stage not specified',
+      foundedYear: 'Year not found',
+      location: 'Location not specified'
+    };
   };
 
   // AI Progress Steps
@@ -154,6 +158,232 @@ const StartupAIAnalyst = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const exportToPDF = () => {
+    if (!analysisResults) return;
+    
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.width;
+    const pageHeight = pdf.internal.pageSize.height;
+    let yPosition = 30;
+    
+    // Header Background
+    pdf.setFillColor(139, 92, 246); // Purple
+    pdf.rect(0, 0, pageWidth, 50, 'F');
+    
+    // Logo/Icon
+    pdf.setFillColor(255, 255, 255);
+    pdf.circle(30, 25, 8, 'F');
+    pdf.setTextColor(139, 92, 246);
+    pdf.setFontSize(12);
+    pdf.text('AI', 26, 29);
+    
+    // Title
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(24);
+    pdf.text('INVESTMENT MEMO', pageWidth / 2, 30, { align: 'center' });
+    
+    yPosition = 70;
+    
+    // Company Header Card
+    pdf.setFillColor(248, 250, 252); // Light gray
+    pdf.roundedRect(20, yPosition - 5, pageWidth - 40, 35, 5, 5, 'F');
+    
+    pdf.setTextColor(30, 41, 59); // Dark gray
+    pdf.setFontSize(20);
+    pdf.text(analysisResults.companyInfo.companyName, pageWidth / 2, yPosition + 8, { align: 'center' });
+    
+    pdf.setFontSize(12);
+    pdf.setTextColor(100, 116, 139);
+    pdf.text(`${analysisResults.companyInfo.sector} • ${analysisResults.companyInfo.stage} • Founded ${analysisResults.companyInfo.foundedYear}`, pageWidth / 2, yPosition + 20, { align: 'center' });
+    
+    yPosition += 50;
+    
+    // Overall Score Circle
+    const centerX = pageWidth / 2;
+    pdf.setFillColor(34, 197, 94); // Green
+    pdf.circle(centerX, yPosition + 20, 25, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(24);
+    pdf.text(analysisResults.overallScore.toString(), centerX, yPosition + 18, { align: 'center' });
+    pdf.setFontSize(10);
+    pdf.text('SCORE', centerX, yPosition + 28, { align: 'center' });
+    
+    yPosition += 60;
+    
+    // Score Cards
+    const scores = [
+      { label: 'Founder Profile', score: analysisResults.founderScore, color: [139, 92, 246] },
+      { label: 'Market Opportunity', score: analysisResults.marketScore, color: [6, 182, 212] },
+      { label: 'Differentiator', score: analysisResults.differentiatorScore, color: [245, 158, 11] },
+      { label: 'Business Metrics', score: analysisResults.metricsScore, color: [16, 185, 129] }
+    ];
+    
+    const cardWidth = (pageWidth - 60) / 2;
+    const cardHeight = 25;
+    
+    scores.forEach((item, index) => {
+      const x = 20 + (index % 2) * (cardWidth + 20);
+      const y = yPosition + Math.floor(index / 2) * (cardHeight + 10);
+      
+      // Card background
+      pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
+      pdf.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'F');
+      
+      // Score text
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(16);
+      pdf.text(item.score.toString(), x + cardWidth - 15, y + 12, { align: 'center' });
+      
+      // Label
+      pdf.setFontSize(10);
+      pdf.text(item.label, x + 8, y + 12);
+      
+      // Progress bar
+      pdf.setFillColor(255, 255, 255, 0.3);
+      pdf.rect(x + 8, y + 16, cardWidth - 35, 3, 'F');
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(x + 8, y + 16, (cardWidth - 35) * (item.score / 100), 3, 'F');
+    });
+    
+    yPosition += 70;
+    
+    // New page for detailed analysis
+    pdf.addPage();
+    yPosition = 30;
+    
+    // Section header
+    pdf.setFillColor(139, 92, 246);
+    pdf.rect(0, 0, pageWidth, 25, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(16);
+    pdf.text('DETAILED ANALYSIS', pageWidth / 2, 16, { align: 'center' });
+    
+    yPosition = 50;
+    
+    // Investment Memo Sections
+    Object.entries(analysisResults.investmentMemo).forEach(([section, data]) => {
+      if (yPosition > 250) {
+        pdf.addPage();
+        yPosition = 30;
+      }
+      
+      // Section card
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(15, yPosition - 5, pageWidth - 30, 8, 2, 2, 'F');
+      
+      // Section title with score badge
+      pdf.setTextColor(30, 41, 59);
+      pdf.setFontSize(14);
+      const sectionTitle = section.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      pdf.text(sectionTitle, 20, yPosition);
+      
+      // Score badge
+      pdf.setFillColor(34, 197, 94);
+      pdf.roundedRect(pageWidth - 50, yPosition - 8, 25, 12, 2, 2, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(10);
+      pdf.text(data.score.toString(), pageWidth - 37.5, yPosition - 1, { align: 'center' });
+      
+      yPosition += 15;
+      
+      // Summary box
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(229, 231, 235);
+      pdf.roundedRect(20, yPosition, pageWidth - 40, 25, 3, 3, 'FD');
+      
+      pdf.setTextColor(75, 85, 99);
+      pdf.setFontSize(9);
+      const summaryLines = pdf.splitTextToSize(data.summary, pageWidth - 50);
+      summaryLines.slice(0, 3).forEach((line, idx) => {
+        pdf.text(line, 25, yPosition + 8 + (idx * 5));
+      });
+      
+      yPosition += 35;
+      
+      // Key points with bullets
+      if (data.keyPoints && data.keyPoints.length > 0) {
+        pdf.setTextColor(30, 41, 59);
+        pdf.setFontSize(10);
+        pdf.text('Key Points:', 20, yPosition);
+        yPosition += 8;
+        
+        data.keyPoints.slice(0, 4).forEach(point => {
+          if (yPosition > 270) {
+            pdf.addPage();
+            yPosition = 30;
+          }
+          
+          // Bullet point
+          pdf.setFillColor(139, 92, 246);
+          pdf.circle(25, yPosition - 1, 1, 'F');
+          
+          pdf.setTextColor(75, 85, 99);
+          pdf.setFontSize(9);
+          const pointLines = pdf.splitTextToSize(point, pageWidth - 60);
+          pointLines.slice(0, 2).forEach((line, idx) => {
+            pdf.text(line, 30, yPosition + (idx * 4));
+          });
+          yPosition += pointLines.length > 1 ? 8 : 6;
+        });
+      }
+      
+      yPosition += 15;
+    });
+    
+    // Risk Factors Page
+    if (analysisResults.riskFactors.length > 0) {
+      pdf.addPage();
+      
+      // Risk header
+      pdf.setFillColor(239, 68, 68);
+      pdf.rect(0, 0, pageWidth, 25, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(16);
+      pdf.text('RISK ASSESSMENT', pageWidth / 2, 16, { align: 'center' });
+      
+      yPosition = 50;
+      
+      analysisResults.riskFactors.forEach((risk, index) => {
+        if (yPosition > 260) {
+          pdf.addPage();
+          yPosition = 30;
+        }
+        
+        // Risk card
+        pdf.setFillColor(254, 242, 242);
+        pdf.setDrawColor(252, 165, 165);
+        pdf.roundedRect(20, yPosition, pageWidth - 40, 20, 3, 3, 'FD');
+        
+        // Warning icon
+        pdf.setTextColor(239, 68, 68);
+        pdf.setFontSize(12);
+        pdf.text('⚠', 25, yPosition + 10);
+        
+        // Risk text
+        pdf.setTextColor(127, 29, 29);
+        pdf.setFontSize(10);
+        const riskLines = pdf.splitTextToSize(risk, pageWidth - 60);
+        riskLines.slice(0, 2).forEach((line, idx) => {
+          pdf.text(line, 35, yPosition + 8 + (idx * 5));
+        });
+        
+        yPosition += 25;
+      });
+    }
+    
+    // Footer on last page
+    pdf.setFillColor(139, 92, 246);
+    pdf.rect(0, pageHeight - 20, pageWidth, 20, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(8);
+    pdf.text('Generated by AI Startup Analyst', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    pdf.text(new Date().toLocaleDateString(), pageWidth / 2, pageHeight - 5, { align: 'center' });
+    
+    // Save PDF
+    const fileName = `Investment_Memo_${analysisResults.companyInfo.companyName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(fileName);
+  };
+
   const runAnalysis = () => {
     console.log('Starting analysis...'); // Debug log
     setIsAnalyzing(true);
@@ -162,7 +392,8 @@ const StartupAIAnalyst = () => {
     
     // Enhanced company detection
     const detectedCompany = detectCompanyType(uploadedFiles);
-    let companyData = mockStartupData;
+    const firstFileName = uploadedFiles.length > 0 ? uploadedFiles[0].name : '';
+    let companyData = getDefaultStartupData(firstFileName);
     let analysisData = {
       overallScore: 78,
       founderScore: 85,
@@ -600,7 +831,7 @@ const StartupAIAnalyst = () => {
                   </p>
                 ) : (
                   <p className="text-purple-200 mb-6">
-                    Experience the AI analysis with sample startup data from EcoTech Solutions.
+                    Experience the AI analysis system with demo functionality.
                   </p>
                 )}
                 <button
@@ -793,7 +1024,10 @@ const StartupAIAnalyst = () => {
                       <FileText className="w-4 h-4" />
                       <span>Professional PDF Ready</span>
                     </div>
-                    <button className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
+                    <button 
+                      onClick={exportToPDF}
+                      className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
                       <Download className="w-4 h-4" />
                       <span>Export PDF</span>
                     </button>
