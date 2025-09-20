@@ -8,6 +8,24 @@ Transform your startup evaluation process from 4 hours to 15 minutes with profes
 
 AI Startup Analyst revolutionizes venture capital decision-making by leveraging multiple specialized AI agents to analyze startups comprehensively. Upload pitch decks, record voice pitches, and receive detailed investment analysis with professional memos in minutes.
 
+## 📸 Application Screenshots
+
+### Data Input Interface
+![Data Input](https://github.com/dileepkumar10/Gen-AI-Exchange-Hackathon/blob/master/screenshots/Screenshot%202025-09-20%20185742.png)
+*Upload pitch decks, documents, and record voice pitches with real-time waveform visualization*
+
+### AI Analysis Dashboard
+![AI Analysis](https://github.com/dileepkumar10/Gen-AI-Exchange-Hackathon/blob/master/screenshots/Screenshot%202025-09-20%20185753.png)
+*Comprehensive scoring with animated score cards showing Founder Profile, Market Opportunity, Differentiator, and Business Metrics*
+
+### Investment Memo Generation
+![Investment Memo](https://github.com/dileepkumar10/Gen-AI-Exchange-Hackathon/blob/master/screenshots/Screenshot%202025-09-20%20185806.png)
+*Professional investment memos with detailed analysis and scoring for each section*
+
+### Let's Venture Integration
+![Let's Venture Integration](https://github.com/dileepkumar10/Gen-AI-Exchange-Hackathon/blob/master/screenshots/Screenshot%202025-09-20%20185822.png)
+*Ready-to-deploy integration with pilot program details and pricing plans*
+
 ## ✨ Key Features
 
 ### 🤖 Multi-Agent AI Architecture
@@ -146,12 +164,12 @@ src/
 4. **Integration Ready**: Seamless platform integration
 5. **Scalability**: Infinite analysis capacity
 
-## 📊 Success Metrics
+<!-- ## 📊 Success Metrics
 
 - **Analysis Time**: 15.2 minutes average
 - **Investor Satisfaction**: 94% approval rating
 - **Deal Flow Efficiency**: 3x improvement
-- **Cost Savings**: $500K annually per VC firm
+- **Cost Savings**: $500K annually per VC firm -->
 
 ## 🔮 Future Roadmap
 
@@ -183,13 +201,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Contact
 
-- **Demo**: [Live Demo Link]
-- **Email**: team@ai-startup-analyst.com
-- **LinkedIn**: [Company LinkedIn]
-- **Website**: [Company Website]
+<!-- - **Demo**: [Live Demo Link] -->
+- **Email**: kumardileep2462000@gmail.com
+<!-- - **LinkedIn**: [Company LinkedIn]
+- **Website**: [Company Website] -->
 
 ---
 
 **Ready to revolutionize venture capital analysis? Start your pilot program today!**
 
-🏆 *Winner of [Hackathon Name] - Best AI Innovation Award*
+<!-- 🏆 *Winner of [Hackathon Name] - Best AI Innovation Award* -->
