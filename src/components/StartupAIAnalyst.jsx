@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, Mic, Users, TrendingUp, Lightbulb, DollarSign, Star, Download, Settings, Play, Pause, Activity, Globe, BarChart3, Zap, HelpCircle, Handshake } from 'lucide-react';
+import { Upload, FileText, Mic, Users, TrendingUp, Lightbulb, DollarSign, Star, Download, Settings, Play, Pause, Activity, Globe, BarChart3, Zap, HelpCircle, Building2 } from 'lucide-react';
 import DemoScript from './DemoScript';
 import LetsVentureIntegration from './LetsVentureIntegration';
 import './animations.css';
@@ -463,7 +463,7 @@ const StartupAIAnalyst = () => {
             { id: 'upload', label: 'Data Input', icon: Upload },
             { id: 'analysis', label: 'AI Analysis', icon: TrendingUp },
             { id: 'memo', label: 'Investment Memo', icon: FileText },
-            { id: 'integration', label: "Let's Venture", icon: Handshake },
+            { id: 'integration', label: "Let's Venture", icon: Building2 },
             { id: 'preferences', label: 'Settings', icon: Settings }
           ].map(tab => (
             <button
