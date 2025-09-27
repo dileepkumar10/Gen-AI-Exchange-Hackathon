@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, Mic, Users, TrendingUp, Lightbulb, DollarSign, Star, Download, Settings, Play, Pause, Activity, Globe, BarChart3, Zap, HelpCircle, Building2 } from 'lucide-react';
+import { Upload, FileText, Mic, Users, TrendingUp, Lightbulb, DollarSign, Star, Download, Settings, Play, Pause, Activity, Globe, BarChart3, Zap, HelpCircle, Building2, LogOut, User } from 'lucide-react';
 import jsPDF from 'jspdf';
 import DemoScript from './DemoScript';
 import LetsVentureIntegration from './LetsVentureIntegration';
+import AuthModal from './AuthModal';
+import apiService from '../services/api';
 import './animations.css';
 
 const StartupAIAnalyst = () => {
@@ -21,8 +23,12 @@ const StartupAIAnalyst = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [apiCalls, setApiCalls] = useState([]);
   const [waveform, setWaveform] = useState([]);
-  const [demoMode, setDemoMode] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
   const [showDemoScript, setShowDemoScript] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [backendConnected, setBackendConnected] = useState(true);
+  const [showLoginFirst, setShowLoginFirst] = useState(true);
   const fileInputRef = useRef(null);
   const recordingInterval = useRef(null);
 
@@ -83,16 +89,34 @@ const StartupAIAnalyst = () => {
     "✨ Quality Agent: Polishing the final report..."
   ];
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
+    
+    if (files.length === 0) {
+      return;
+    }
+    
+    if (!isAuthenticated && !demoMode) {
+      setShowAuthModal(true);
+      return;
+    }
+    
+    // Always add files to state for display
     const newFiles = files.map(file => ({
       id: Date.now() + Math.random(),
       name: file.name,
       type: file.type,
       size: file.size,
-      uploadDate: new Date().toLocaleDateString()
+      uploadDate: new Date().toLocaleDateString(),
+      file: file
     }));
+    
     setUploadedFiles(prev => [...prev, ...newFiles]);
+    
+    // Clear the input value to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const startRecording = () => {
@@ -120,6 +144,21 @@ const StartupAIAnalyst = () => {
     setWaveform([]);
   };
 
+  // Check backend connection on mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      try {
+        await apiService.healthCheck();
+        setBackendConnected(true);
+      } catch (error) {
+        console.log('Backend not connected, using demo mode');
+        setBackendConnected(false);
+        setDemoMode(true);
+      }
+    };
+    checkBackend();
+  }, []);
+
   // Voice waveform effect
   useEffect(() => {
     if (isRecording) {
@@ -129,6 +168,20 @@ const StartupAIAnalyst = () => {
       return () => clearInterval(interval);
     }
   }, [isRecording]);
+
+  // Authentication handlers
+  const handleAuthSuccess = () => {
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+    setShowLoginFirst(false);
+    setDemoMode(false);
+  };
+
+  const handleDemoMode = () => {
+    setShowLoginFirst(false);
+    setDemoMode(true);
+    setIsAuthenticated(false);
+  };
 
   // AI progress tracker effect
   useEffect(() => {
@@ -164,166 +217,238 @@ const StartupAIAnalyst = () => {
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.width;
     const pageHeight = pdf.internal.pageSize.height;
-    let yPosition = 30;
+    let yPosition = 40;
     
-    // Header Background
-    pdf.setFillColor(139, 92, 246); // Purple
-    pdf.rect(0, 0, pageWidth, 50, 'F');
+    // Professional Header with subtle line
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 35, pageWidth - 20, 35);
     
-    // Logo/Icon
-    pdf.setFillColor(255, 255, 255);
-    pdf.circle(30, 25, 8, 'F');
-    pdf.setTextColor(139, 92, 246);
-    pdf.setFontSize(12);
-    pdf.text('AI', 26, 29);
+    // Company Logo Area (placeholder)
+    pdf.setFillColor(245, 245, 245);
+    pdf.rect(20, 15, 25, 15, 'F');
+    pdf.setTextColor(100, 100, 100);
+    pdf.setFontSize(8);
+    pdf.text('LOGO', 32.5, 25, { align: 'center' });
     
-    // Title
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(24);
-    pdf.text('INVESTMENT MEMO', pageWidth / 2, 30, { align: 'center' });
-    
-    yPosition = 70;
-    
-    // Company Header Card
-    pdf.setFillColor(248, 250, 252); // Light gray
-    pdf.roundedRect(20, yPosition - 5, pageWidth - 40, 35, 5, 5, 'F');
-    
-    pdf.setTextColor(30, 41, 59); // Dark gray
+    // Title - Professional Typography
+    pdf.setTextColor(50, 50, 50);
+    pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(20);
-    pdf.text(analysisResults.companyInfo.companyName, pageWidth / 2, yPosition + 8, { align: 'center' });
+    pdf.text('INVESTMENT ANALYSIS REPORT', pageWidth / 2, 25, { align: 'center' });
     
-    pdf.setFontSize(12);
-    pdf.setTextColor(100, 116, 139);
-    pdf.text(`${analysisResults.companyInfo.sector} • ${analysisResults.companyInfo.stage} • Founded ${analysisResults.companyInfo.foundedYear}`, pageWidth / 2, yPosition + 20, { align: 'center' });
-    
-    yPosition += 50;
-    
-    // Overall Score Circle
-    const centerX = pageWidth / 2;
-    pdf.setFillColor(34, 197, 94); // Green
-    pdf.circle(centerX, yPosition + 20, 25, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(24);
-    pdf.text(analysisResults.overallScore.toString(), centerX, yPosition + 18, { align: 'center' });
+    pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    pdf.text('SCORE', centerX, yPosition + 28, { align: 'center' });
-    
-    yPosition += 60;
-    
-    // Score Cards
-    const scores = [
-      { label: 'Founder Profile', score: analysisResults.founderScore, color: [139, 92, 246] },
-      { label: 'Market Opportunity', score: analysisResults.marketScore, color: [6, 182, 212] },
-      { label: 'Differentiator', score: analysisResults.differentiatorScore, color: [245, 158, 11] },
-      { label: 'Business Metrics', score: analysisResults.metricsScore, color: [16, 185, 129] }
-    ];
-    
-    const cardWidth = (pageWidth - 60) / 2;
-    const cardHeight = 25;
-    
-    scores.forEach((item, index) => {
-      const x = 20 + (index % 2) * (cardWidth + 20);
-      const y = yPosition + Math.floor(index / 2) * (cardHeight + 10);
-      
-      // Card background
-      pdf.setFillColor(item.color[0], item.color[1], item.color[2]);
-      pdf.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'F');
-      
-      // Score text
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(16);
-      pdf.text(item.score.toString(), x + cardWidth - 15, y + 12, { align: 'center' });
-      
-      // Label
-      pdf.setFontSize(10);
-      pdf.text(item.label, x + 8, y + 12);
-      
-      // Progress bar
-      pdf.setFillColor(255, 255, 255, 0.3);
-      pdf.rect(x + 8, y + 16, cardWidth - 35, 3, 'F');
-      pdf.setFillColor(255, 255, 255);
-      pdf.rect(x + 8, y + 16, (cardWidth - 35) * (item.score / 100), 3, 'F');
-    });
-    
-    yPosition += 70;
-    
-    // New page for detailed analysis
-    pdf.addPage();
-    yPosition = 30;
-    
-    // Section header
-    pdf.setFillColor(139, 92, 246);
-    pdf.rect(0, 0, pageWidth, 25, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(16);
-    pdf.text('DETAILED ANALYSIS', pageWidth / 2, 16, { align: 'center' });
+    pdf.setTextColor(120, 120, 120);
+    pdf.text('Confidential Investment Memorandum', pageWidth / 2, 32, { align: 'center' });
     
     yPosition = 50;
     
-    // Investment Memo Sections
-    Object.entries(analysisResults.investmentMemo).forEach(([section, data]) => {
-      if (yPosition > 250) {
-        pdf.addPage();
-        yPosition = 30;
+    // Executive Summary Box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setLineWidth(1);
+    pdf.rect(20, yPosition, pageWidth - 40, 45);
+    
+    // Company Name - Professional styling
+    pdf.setTextColor(30, 30, 30);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(18);
+    pdf.text(analysisResults.companyInfo.companyName, pageWidth / 2, yPosition + 15, { align: 'center' });
+    
+    // Company Details
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.setTextColor(80, 80, 80);
+    pdf.text(`${analysisResults.companyInfo.sector} | ${analysisResults.companyInfo.stage} | Founded ${analysisResults.companyInfo.foundedYear}`, pageWidth / 2, yPosition + 25, { align: 'center' });
+    
+    // Date and Confidentiality
+    pdf.setFontSize(9);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(`Analysis Date: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition + 35, { align: 'center' });
+    
+    yPosition += 60;
+    
+    // Investment Score - Professional Design
+    const scoreBoxWidth = 80;
+    const scoreBoxHeight = 40;
+    const scoreBoxX = (pageWidth - scoreBoxWidth) / 2;
+    
+    // Score background
+    const scoreColor = analysisResults.overallScore >= 80 ? [34, 139, 34] : 
+                      analysisResults.overallScore >= 60 ? [255, 165, 0] : [220, 20, 60];
+    
+    pdf.setFillColor(scoreColor[0], scoreColor[1], scoreColor[2]);
+    pdf.rect(scoreBoxX, yPosition, scoreBoxWidth, scoreBoxHeight, 'F');
+    
+    // Score text
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(28);
+    pdf.text(analysisResults.overallScore.toString(), scoreBoxX + scoreBoxWidth/2, yPosition + 20, { align: 'center' });
+    
+    pdf.setFontSize(10);
+    pdf.text('INVESTMENT SCORE', scoreBoxX + scoreBoxWidth/2, yPosition + 30, { align: 'center' });
+    
+    // Score interpretation
+    pdf.setTextColor(100, 100, 100);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    const scoreText = analysisResults.overallScore >= 80 ? 'Strong Investment Opportunity' :
+                     analysisResults.overallScore >= 60 ? 'Moderate Investment Potential' : 'High Risk Investment';
+    pdf.text(scoreText, pageWidth / 2, yPosition + 50, { align: 'center' });
+    
+    yPosition += 70;
+    
+    // Professional Score Table
+    const tableY = yPosition;
+    const rowHeight = 20;
+    const colWidth = (pageWidth - 40) / 3;
+    
+    // Table header
+    pdf.setFillColor(240, 240, 240);
+    pdf.rect(20, tableY, pageWidth - 40, rowHeight, 'F');
+    pdf.setDrawColor(200, 200, 200);
+    pdf.rect(20, tableY, pageWidth - 40, rowHeight);
+    
+    pdf.setTextColor(60, 60, 60);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.text('EVALUATION CRITERIA', 25, tableY + 12);
+    pdf.text('SCORE', 20 + colWidth * 2 + 10, tableY + 12);
+    pdf.text('RATING', 20 + colWidth * 2 + 50, tableY + 12);
+    
+    const scores = [
+      { label: 'Founder Profile', score: analysisResults.founderScore },
+      { label: 'Market Opportunity', score: analysisResults.marketScore },
+      { label: 'Unique Differentiator', score: analysisResults.differentiatorScore },
+      { label: 'Business Metrics', score: analysisResults.metricsScore }
+    ];
+    
+    scores.forEach((item, index) => {
+      const y = tableY + rowHeight * (index + 1);
+      
+      // Row background (alternating)
+      if (index % 2 === 1) {
+        pdf.setFillColor(250, 250, 250);
+        pdf.rect(20, y, pageWidth - 40, rowHeight, 'F');
       }
       
-      // Section card
-      pdf.setFillColor(248, 250, 252);
-      pdf.roundedRect(15, yPosition - 5, pageWidth - 30, 8, 2, 2, 'F');
+      // Row border
+      pdf.setDrawColor(220, 220, 220);
+      pdf.rect(20, y, pageWidth - 40, rowHeight);
       
-      // Section title with score badge
-      pdf.setTextColor(30, 41, 59);
-      pdf.setFontSize(14);
-      const sectionTitle = section.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-      pdf.text(sectionTitle, 20, yPosition);
-      
-      // Score badge
-      pdf.setFillColor(34, 197, 94);
-      pdf.roundedRect(pageWidth - 50, yPosition - 8, 25, 12, 2, 2, 'F');
-      pdf.setTextColor(255, 255, 255);
+      // Content
+      pdf.setTextColor(70, 70, 70);
+      pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
-      pdf.text(data.score.toString(), pageWidth - 37.5, yPosition - 1, { align: 'center' });
+      pdf.text(item.label, 25, y + 12);
       
-      yPosition += 15;
+      // Score
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(item.score.toString(), 20 + colWidth * 2 + 20, y + 12, { align: 'center' });
       
-      // Summary box
-      pdf.setFillColor(255, 255, 255);
-      pdf.setDrawColor(229, 231, 235);
-      pdf.roundedRect(20, yPosition, pageWidth - 40, 25, 3, 3, 'FD');
+      // Rating
+      pdf.setFont('helvetica', 'normal');
+      const rating = item.score >= 80 ? 'Excellent' : item.score >= 60 ? 'Good' : 'Fair';
+      pdf.text(rating, 20 + colWidth * 2 + 60, y + 12);
+    });
+    
+    yPosition += rowHeight * 5 + 20;
+    
+    // New page for detailed analysis
+    pdf.addPage();
+    yPosition = 40;
+    
+    // Professional page header
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 25, pageWidth - 20, 25);
+    
+    pdf.setTextColor(60, 60, 60);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text('DETAILED INVESTMENT ANALYSIS', 20, 20);
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(`Page 2 of Investment Memo - ${analysisResults.companyInfo.companyName}`, 20, 32);
+    
+    yPosition = 50;
+    
+    // Investment Memo Sections - Professional Layout
+    Object.entries(analysisResults.investmentMemo).forEach(([section, data]) => {
+      if (yPosition > 240) {
+        pdf.addPage();
+        yPosition = 40;
+        
+        // Page header for continuation
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.5);
+        pdf.line(20, 25, pageWidth - 20, 25);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.text(`Investment Analysis - ${analysisResults.companyInfo.companyName} (Continued)`, 20, 20);
+        yPosition = 35;
+      }
       
-      pdf.setTextColor(75, 85, 99);
-      pdf.setFontSize(9);
-      const summaryLines = pdf.splitTextToSize(data.summary, pageWidth - 50);
-      summaryLines.slice(0, 3).forEach((line, idx) => {
-        pdf.text(line, 25, yPosition + 8 + (idx * 5));
+      // Section header with professional styling
+      pdf.setDrawColor(180, 180, 180);
+      pdf.setLineWidth(0.8);
+      pdf.line(20, yPosition, pageWidth - 20, yPosition);
+      
+      pdf.setTextColor(50, 50, 50);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      const sectionTitle = section.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      pdf.text(sectionTitle.toUpperCase(), 20, yPosition + 12);
+      
+      // Score in professional format
+      pdf.setTextColor(100, 100, 100);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.text(`Score: ${data.score}/100`, pageWidth - 60, yPosition + 12);
+      
+      yPosition += 20;
+      
+      // Summary with professional formatting
+      pdf.setTextColor(70, 70, 70);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      const summaryLines = pdf.splitTextToSize(data.summary, pageWidth - 40);
+      summaryLines.slice(0, 4).forEach((line, idx) => {
+        pdf.text(line, 20, yPosition + (idx * 5));
       });
       
-      yPosition += 35;
+      yPosition += summaryLines.length * 5 + 10;
       
-      // Key points with bullets
+      // Key points with professional bullets
       if (data.keyPoints && data.keyPoints.length > 0) {
-        pdf.setTextColor(30, 41, 59);
-        pdf.setFontSize(10);
-        pdf.text('Key Points:', 20, yPosition);
+        pdf.setTextColor(80, 80, 80);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.text('KEY HIGHLIGHTS:', 20, yPosition);
         yPosition += 8;
         
         data.keyPoints.slice(0, 4).forEach(point => {
           if (yPosition > 270) {
             pdf.addPage();
-            yPosition = 30;
+            yPosition = 40;
           }
           
-          // Bullet point
-          pdf.setFillColor(139, 92, 246);
-          pdf.circle(25, yPosition - 1, 1, 'F');
+          // Professional bullet
+          pdf.setTextColor(120, 120, 120);
+          pdf.text('•', 25, yPosition);
           
-          pdf.setTextColor(75, 85, 99);
+          pdf.setTextColor(70, 70, 70);
+          pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(9);
-          const pointLines = pdf.splitTextToSize(point, pageWidth - 60);
+          const pointLines = pdf.splitTextToSize(point, pageWidth - 50);
           pointLines.slice(0, 2).forEach((line, idx) => {
-            pdf.text(line, 30, yPosition + (idx * 4));
+            pdf.text(line, 32, yPosition + (idx * 4));
           });
-          yPosition += pointLines.length > 1 ? 8 : 6;
+          yPosition += Math.max(pointLines.length * 4, 6);
         });
       }
       
@@ -371,23 +496,32 @@ const StartupAIAnalyst = () => {
       });
     }
     
-    // Footer on last page
-    pdf.setFillColor(139, 92, 246);
-    pdf.rect(0, pageHeight - 20, pageWidth, 20, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(8);
-    pdf.text('Generated by AI Startup Analyst', pageWidth / 2, pageHeight - 10, { align: 'center' });
-    pdf.text(new Date().toLocaleDateString(), pageWidth / 2, pageHeight - 5, { align: 'center' });
+    // Professional footer
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(20, pageHeight - 25, pageWidth - 20, pageHeight - 25);
     
-    // Save PDF
-    const fileName = `Investment_Memo_${analysisResults.companyInfo.companyName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.setTextColor(120, 120, 120);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    pdf.text('This analysis is confidential and proprietary.', 20, pageHeight - 15);
+    pdf.text(`Generated by AI Startup Analyst | ${new Date().toLocaleDateString()}`, pageWidth - 20, pageHeight - 15, { align: 'right' });
+    pdf.text('Page ' + pdf.internal.getNumberOfPages(), pageWidth / 2, pageHeight - 10, { align: 'center' });
+    
+    // Save PDF with professional naming
+    const fileName = `Investment_Analysis_${analysisResults.companyInfo.companyName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     pdf.save(fileName);
   };
 
-  const runAnalysis = () => {
-    console.log('Starting analysis...'); // Debug log
+  const runAnalysis = async () => {
+    if (!isAuthenticated && !demoMode) {
+      setShowAuthModal(true);
+      return;
+    }
+    
+    console.log('Starting analysis...');
     setIsAnalyzing(true);
-    setActiveTab('analysis'); // Automatically switch to analysis tab
+    setActiveTab('analysis');
     setCurrentStep(0);
     
     // Enhanced company detection
@@ -427,9 +561,10 @@ const StartupAIAnalyst = () => {
       };
     }
     
-    // Simulate AI analysis process
-    setTimeout(() => {
-      console.log('Analysis complete, setting results...'); // Debug log
+    if (demoMode) {
+      // Demo mode - simulate analysis
+      setTimeout(() => {
+        console.log('Demo analysis complete, setting results...');
       const mockAnalysis = {
         ...analysisData,
         companyInfo: companyData,
@@ -538,10 +673,88 @@ const StartupAIAnalyst = () => {
         ]
       };
       
-      setAnalysisResults(mockAnalysis);
-      setIsAnalyzing(false);
-      console.log('State updated successfully'); // Debug log
-    }, 3000);
+        setAnalysisResults(mockAnalysis);
+        setIsAnalyzing(false);
+        console.log('Demo state updated successfully');
+      }, 3000);
+    } else {
+      // Live mode - call backend API
+      try {
+        if (uploadedFiles.length === 0) {
+          alert('Please upload files first');
+          setIsAnalyzing(false);
+          return;
+        }
+        
+        // Upload files and get analysis
+        const file = uploadedFiles[0].file;
+        const response = await apiService.uploadFiles(file);
+        
+        // Clean markdown formatting function
+        const cleanText = (text) => {
+          return text
+            .replace(/#{1,6}\s*/g, '') // Remove # headers
+            .replace(/\*\*(.*?)\*\*/g, '$1') // Remove ** bold
+            .replace(/\*(.*?)\*/g, '$1') // Remove * italic
+            .replace(/`(.*?)`/g, '$1') // Remove ` code
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove [text](link)
+            .trim();
+        };
+        
+        // Transform backend response to frontend format
+        const transformedResults = {
+          companyInfo: {
+            companyName: file.name.replace(/\.(pdf|pptx|docx|ppt|doc)$/i, '').replace(/[-_]/g, ' '),
+            founders: ['Analysis from uploaded document'],
+            sector: 'Analyzed from document',
+            stage: 'Document analysis',
+            foundedYear: new Date().getFullYear().toString(),
+            location: 'Location from document'
+          },
+          overallScore: Math.round((
+            (response.founders_profile?.score || 75) + 
+            (response.market_problem?.score || 75) + 
+            (response.unique_differentiator?.score || 75) + 
+            (response.business_metrics?.score || 75)
+          ) / 4),
+          founderScore: response.founders_profile?.score || 75,
+          marketScore: response.market_problem?.score || 75,
+          differentiatorScore: response.unique_differentiator?.score || 75,
+          metricsScore: response.business_metrics?.score || 75,
+          investmentMemo: {
+            founderProfile: {
+              score: response.founders_profile.score,
+              summary: cleanText(response.founders_profile.investment_memo),
+              keyPoints: response.founders_profile.investment_memo.split('\n').filter(line => line.trim().startsWith('1.') || line.trim().startsWith('2.') || line.trim().startsWith('3.')).map(line => cleanText(line.replace(/^\d+\.\s*/, '')))
+            },
+            problemMarket: {
+              score: response.market_problem.score,
+              summary: cleanText(response.market_problem.investment_memo),
+              keyPoints: response.market_problem.investment_memo.split('\n').filter(line => line.trim().startsWith('1.') || line.trim().startsWith('2.') || line.trim().startsWith('3.')).map(line => cleanText(line.replace(/^\d+\.\s*/, '')))
+            },
+            uniqueDifferentiator: {
+              score: response.unique_differentiator.score,
+              summary: cleanText(response.unique_differentiator.investment_memo),
+              keyPoints: response.unique_differentiator.investment_memo.split('\n').filter(line => line.trim().startsWith('1.') || line.trim().startsWith('2.') || line.trim().startsWith('3.')).map(line => cleanText(line.replace(/^\d+\.\s*/, '')))
+            },
+            businessMetrics: {
+              score: response.business_metrics.score,
+              summary: cleanText(response.business_metrics.investment_memo),
+              keyPoints: response.business_metrics.investment_memo.split('\n').filter(line => line.trim().startsWith('1.') || line.trim().startsWith('2.') || line.trim().startsWith('3.')).map(line => cleanText(line.replace(/^\d+\.\s*/, '')))
+            }
+          },
+          riskFactors: response.risk_factor.investment_memo.split('\n').filter(line => line.trim().startsWith('1.') || line.trim().startsWith('2.') || line.trim().startsWith('3.')).map(line => cleanText(line.replace(/^\d+\.\s*/, ''))),
+          nextSteps: response.recommended_next_steps.investment_memo.split('\n').filter(line => line.trim().startsWith('1.') || line.trim().startsWith('2.') || line.trim().startsWith('3.')).map(line => cleanText(line.replace(/^\d+\.\s*/, '')))
+        };
+        
+        setAnalysisResults(transformedResults);
+        setIsAnalyzing(false);
+      } catch (error) {
+        console.error('Analysis failed:', error);
+        setIsAnalyzing(false);
+        alert('Analysis failed: ' + error.message);
+      }
+    }
   };
 
   // Animated Score Card Component
@@ -549,14 +762,16 @@ const StartupAIAnalyst = () => {
     const [currentScore, setCurrentScore] = useState(0);
     
     useEffect(() => {
+      setCurrentScore(0);
+      
       const timer = setTimeout(() => {
-        const interval = setInterval(() => {
+        let intervalId = setInterval(() => {
           setCurrentScore(prev => {
             if (prev >= finalScore) {
-              clearInterval(interval);
+              clearInterval(intervalId);
               return finalScore;
             }
-            return prev + 2;
+            return Math.min(prev + 2, finalScore);
           });
         }, 50);
       }, delay);
@@ -615,27 +830,74 @@ const StartupAIAnalyst = () => {
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Demo Mode Banner */}
-      {demoMode && (
-        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-b border-yellow-500/30">
-          <div className="max-w-7xl mx-auto px-6 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-yellow-400">🎭</span>
-                <span className="text-white text-sm">Demo Mode Active - Using sample data for presentation</span>
-              </div>
+  // Show login screen first
+  if (showLoginFirst) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mx-auto mb-6">
+              <TrendingUp className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">AI Startup Analyst</h1>
+            <p className="text-purple-200 mb-8">Transform your startup evaluation process with AI-powered analysis</p>
+            
+            <div className="space-y-4">
               <button
-                onClick={() => setDemoMode(false)}
-                className="text-yellow-400 hover:text-yellow-300 text-sm underline"
+                onClick={() => setShowAuthModal(true)}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all"
               >
-                Switch to Live Mode
+                Login / Sign Up
               </button>
+              
+              <button
+                onClick={handleDemoMode}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-lg transition-all border border-white/20"
+              >
+                Try Demo Mode
+              </button>
+            </div>
+            
+            <div className="mt-8 text-sm text-purple-300">
+              <p>• Upload pitch decks & documents</p>
+              <p>• AI-powered investment analysis</p>
+              <p>• Professional investment memos</p>
             </div>
           </div>
         </div>
-      )}
+        
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Mode Banner */}
+      <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-b border-purple-500/30">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-purple-400">{isAuthenticated ? '🚀' : '🎭'}</span>
+              <span className="text-white text-sm">
+                {isAuthenticated ? 'Live Mode - Real AI Analysis Active' : 'Demo Mode - Using sample data'}
+              </span>
+            </div>
+            {!isAuthenticated && (
+              <button
+                onClick={() => setShowLoginFirst(true)}
+                className="text-purple-300 hover:text-purple-200 text-sm underline"
+              >
+                Back to Login
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-md border-b border-white/20">
@@ -675,13 +937,31 @@ const StartupAIAnalyst = () => {
                 <span>Demo Script</span>
               </button>
               
-              <button 
-                onClick={() => setActiveTab('preferences')}
-                className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-all"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Preferences</span>
-              </button>
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => {
+                    setIsAuthenticated(false);
+                    setDemoMode(false);
+                    setShowLoginFirst(true);
+                    setUploadedFiles([]);
+                    setAnalysisResults(null);
+                  }}
+                  className="flex items-center space-x-2 bg-red-500/20 hover:bg-red-500/30 text-white px-4 py-2 rounded-lg transition-all border border-red-500/30"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center space-x-2 bg-purple-500/20 hover:bg-purple-500/30 text-white px-4 py-2 rounded-lg transition-all border border-purple-500/30"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Login</span>
+                </button>
+              )}
+              
+
             </div>
           </div>
         </div>
@@ -696,7 +976,7 @@ const StartupAIAnalyst = () => {
             { id: 'memo', label: 'Investment Memo', icon: FileText },
             { id: 'integration', label: "Let's Venture", icon: Building2 },
             { id: 'preferences', label: 'Settings', icon: Settings }
-          ].map(tab => (
+          ].filter(tab => tab.id !== 'preferences').map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -727,7 +1007,10 @@ const StartupAIAnalyst = () => {
                     Pitch Decks & Documents
                   </h3>
                   <div 
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      console.log('Upload area clicked');
+                      fileInputRef.current?.click();
+                    }}
                     className="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 transition-colors bg-white/5"
                   >
                     <Upload className="w-12 h-12 text-purple-300 mx-auto mb-4" />
@@ -739,7 +1022,10 @@ const StartupAIAnalyst = () => {
                     type="file"
                     multiple
                     accept=".pdf,.ppt,.pptx,.doc,.docx,.txt"
-                    onChange={handleFileUpload}
+                    onChange={(e) => {
+                      console.log('File input changed:', e.target.files);
+                      handleFileUpload(e);
+                    }}
                     className="hidden"
                   />
                 </div>
@@ -813,6 +1099,13 @@ const StartupAIAnalyst = () => {
                           </p>
                         </div>
                       </div>
+                      <button
+                        onClick={() => setUploadedFiles(prev => prev.filter(f => f.id !== file.id))}
+                        className="text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                        title="Remove file"
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -825,15 +1118,15 @@ const StartupAIAnalyst = () => {
                 <h3 className="text-lg font-semibold text-white mb-4">
                   {uploadedFiles.length > 0 ? 'Ready to Analyze' : 'Try Demo Analysis'}
                 </h3>
-                {uploadedFiles.length > 0 ? (
-                  <p className="text-purple-200 mb-6">
-                    AI will analyze your {uploadedFiles.length} uploaded file(s) and generate a comprehensive investment memo.
-                  </p>
-                ) : (
-                  <p className="text-purple-200 mb-6">
-                    Experience the AI analysis system with demo functionality.
-                  </p>
-                )}
+                <p className="text-purple-200 mb-6">
+                  {demoMode ? (
+                    'Experience the AI analysis system with demo functionality.'
+                  ) : uploadedFiles.length > 0 ? (
+                    `AI will analyze your ${uploadedFiles.length} uploaded file(s) and generate a comprehensive investment memo.`
+                  ) : (
+                    'Upload startup materials to begin AI analysis.'
+                  )}
+                </p>
                 <button
                   onClick={runAnalysis}
                   disabled={isAnalyzing}
@@ -1075,51 +1368,7 @@ const StartupAIAnalyst = () => {
           </div>
         )}
 
-        {activeTab === 'preferences' && (
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-6">Investor Preferences</h2>
-            <p className="text-purple-200 mb-8">
-              Adjust the weighting for each investment criteria. The AI will tailor its analysis based on your preferences.
-            </p>
-            <div className="space-y-6">
-              {[
-                { key: 'founder', label: 'Founder Profile', color: '#8B5CF6' },
-                { key: 'market', label: 'Market Opportunity', color: '#06B6D4' },
-                { key: 'differentiator', label: 'Differentiator', color: '#F59E0B' },
-                { key: 'metrics', label: 'Business Metrics', color: '#10B981' }
-              ].map(pref => (
-                <div key={pref.key}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white font-medium">{pref.label}</span>
-                    <span className="text-purple-200">{investorPreferences[pref.key]}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={investorPreferences[pref.key]}
-                    onChange={e => {
-                      const value = Number(e.target.value);
-                      setInvestorPreferences(prev => ({
-                        ...prev,
-                        [pref.key]: value
-                      }));
-                    }}
-                    className="w-full accent-purple-500"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="text-right mt-8">
-              <button
-                onClick={() => setActiveTab('upload')}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg"
-              >
-                Save & Back
-              </button>
-            </div>
-          </div>
-        )}
+
 
         {activeTab === 'integration' && (
           <LetsVentureIntegration />
@@ -1129,6 +1378,13 @@ const StartupAIAnalyst = () => {
         {showDemoScript && (
           <DemoScript onClose={() => setShowDemoScript(false)} />
         )}
+        
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={handleAuthSuccess}
+        />
       </div>
     </div>
     );

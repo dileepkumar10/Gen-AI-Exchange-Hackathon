@@ -1,8 +1,17 @@
-# 🚀 AI Startup Analyst
+# 🚀 AI Startup Analyst - AI-Powered Version
 
-**The First Multi-Agent AI System for Venture Capital Analysis**
+**Complete Multi-Agent AI System for Venture Capital Analysis with Real LLM Integration**
 
-Transform your startup evaluation process from 4 hours to 15 minutes with professional investment memos powered by advanced AI agents.
+Transform your startup evaluation process from 4 hours to 15 minutes with professional investment memos powered by GROQ LLM and advanced AI agents.
+
+## 🆕 What's New in AI-Included Branch
+
+- ✅ **Real AI Integration**: GROQ LLM for actual document analysis
+- ✅ **User Authentication**: JWT-based login/signup system
+- ✅ **PDF Processing**: Real document text extraction with PyPDF2
+- ✅ **Professional PDF Export**: Business-grade investment memo generation
+- ✅ **PostgreSQL Database**: Production-ready data storage
+- ✅ **Live/Demo Modes**: Switch between real AI analysis and demo data
 
 ## 🎯 Overview
 
@@ -69,31 +78,82 @@ AI Startup Analyst revolutionizes venture capital decision-making by leveraging 
 
 ### Prerequisites
 - Node.js 16+ 
-- npm or yarn
+- Python 3.8+
+- PostgreSQL (or use SQLite for development)
+- GROQ API Key (get from https://console.groq.com/)
 
 ### Installation
 
+#### 1. Clone and Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/ai-startup-analyst.git
-
-# Navigate to project directory
+git clone <your-repo-url>
 cd ai-startup-analyst/ai-startup-analyst
 
-# Install dependencies
+# Install frontend dependencies
 npm install
 
-# Start development server
+# Install backend dependencies
+cd backend
+pip install -r requirements.txt
+pip install PyPDF2  # For PDF processing
+```
+
+#### 2. Environment Configuration
+```bash
+# Copy environment template
+cp backend/.env.example backend/.env
+
+# Edit backend/.env with your settings:
+# - Add your GROQ API key
+# - Configure database URL
+# - Set upload directory
+```
+
+#### 3. Database Setup
+```bash
+# Initialize database with prompts
+cd backend
+python init_db.py
+```
+
+#### 4. Start Application
+```bash
+# Terminal 1 - Backend
+cd backend
+python main.py
+
+# Terminal 2 - Frontend
+cd ..
 npm start
 ```
 
+**Application URLs:**
+- Frontend: http://localhost:3000
+- Backend API: http://127.0.0.1:8000
+- API Docs: http://127.0.0.1:8000/docs
+
 ### Usage
 
-1. **Upload Materials**: Add pitch decks, documents, or record voice pitches
-2. **Run Analysis**: Click "Start AI Analysis" to begin evaluation
-3. **Review Results**: View comprehensive scoring and analysis
-4. **Generate Memo**: Export professional investment memo as PDF
-5. **Customize Preferences**: Adjust scoring weights for different criteria
+#### Getting Started
+1. **Login Screen**: Choose between Live Mode or Demo Mode
+2. **Create Account**: Sign up for real AI analysis
+3. **Upload Documents**: PDF pitch decks and business documents
+4. **AI Analysis**: Real-time processing with GROQ LLM
+5. **Professional Reports**: Export investment memos as PDF
+
+#### Live Mode Features
+- ✅ **Real AI Analysis**: GROQ LLM processes your documents
+- ✅ **Document Upload**: PDF text extraction and analysis
+- ✅ **User Authentication**: Secure login with JWT tokens
+- ✅ **Investment Scoring**: AI-generated scores (0-100)
+- ✅ **Professional PDFs**: Business-grade memo export
+- ✅ **File Management**: Upload, view, and remove documents
+
+#### Demo Mode Features
+- 🎭 **Sample Data**: Pre-built analysis examples
+- 🎭 **UI Testing**: Full interface without backend
+- 🎭 **Presentation Ready**: Perfect for demos and pitches
 
 ## 📈 Business Impact
 
@@ -104,22 +164,61 @@ npm start
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React, Tailwind CSS, Lucide Icons
-- **Animations**: Custom CSS animations and transitions
-- **Architecture**: Component-based design with hooks
-- **Integration**: RESTful API ready for backend services
+### Frontend
+- **Framework**: React 18 with Hooks
+- **Styling**: Tailwind CSS, Custom animations
+- **Icons**: Lucide React
+- **PDF Generation**: jsPDF with professional templates
+- **HTTP Client**: Fetch API with authentication
+- **State Management**: React Hooks
+
+### Backend
+- **Framework**: FastAPI (Python)
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Authentication**: JWT with OAuth2 Bearer tokens
+- **AI Integration**: GROQ LLM (llama-3.1-8b-instant)
+- **Document Processing**: PyPDF2 for text extraction
+- **File Upload**: Multi-part form handling
+- **API Documentation**: Auto-generated Swagger/OpenAPI
+
+### AI & ML
+- **LLM Provider**: GROQ Cloud
+- **Model**: llama-3.1-8b-instant
+- **Document Analysis**: Custom prompt engineering
+- **Score Extraction**: Regex-based parsing with validation
 
 ## 📁 Project Structure
 
 ```
-src/
-├── components/
-│   ├── StartupAIAnalyst.jsx    # Main application component
-│   ├── DemoScript.jsx          # Hackathon demo guide
-│   ├── LetsVentureIntegration.jsx # Partnership integration
-│   └── animations.css          # Custom animations
-├── App.js                      # Application entry point
-└── index.js                    # React DOM rendering
+ai-startup-analyst/
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── StartupAIAnalyst.jsx    # Main application
+│   │   │   ├── AuthModal.jsx           # Login/Signup modal
+│   │   │   ├── DemoScript.jsx          # Demo guide
+│   │   │   └── animations.css          # Custom animations
+│   │   ├── services/
+│   │   │   └── api.js                  # Backend API client
+│   │   └── utils/
+│   └── package.json
+├── backend/
+│   ├── core/
+│   │   ├── auth.py                     # JWT authentication
+│   │   ├── database.py                 # Database connection
+│   │   └── config.py                   # Configuration
+│   ├── ml_services/
+│   │   ├── generate_reports.py         # AI analysis engine
+│   │   └── parse_documents.py          # PDF processing
+│   ├── routers/
+│   │   ├── auth_routes.py              # Auth endpoints
+│   │   └── input_routes.py             # File upload & analysis
+│   ├── models/
+│   │   └── user.py                     # Database models
+│   ├── .env                            # Environment variables
+│   ├── requirements.txt                # Python dependencies
+│   └── main.py                         # FastAPI application
+└── README.md
 ```
 
 ## 🎯 Demo Script (5 Minutes)
@@ -164,12 +263,12 @@ src/
 4. **Integration Ready**: Seamless platform integration
 5. **Scalability**: Infinite analysis capacity
 
-<!-- ## 📊 Success Metrics
+    <!-- ## 📊 Success Metrics
 
-- **Analysis Time**: 15.2 minutes average
-- **Investor Satisfaction**: 94% approval rating
-- **Deal Flow Efficiency**: 3x improvement
-- **Cost Savings**: $500K annually per VC firm -->
+    - **Analysis Time**: 15.2 minutes average
+    - **Investor Satisfaction**: 94% approval rating
+    - **Deal Flow Efficiency**: 3x improvement
+    - **Cost Savings**: $500K annually per VC firm -->
 
 ## 🔮 Future Roadmap
 
@@ -191,6 +290,59 @@ src/
 - International expansion
 - Advanced analytics
 
+## 🔧 Configuration
+
+### Environment Variables (.env)
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/ai_startup_analyst
+
+# Authentication
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# AI Integration
+GROQ_API_KEY=your-groq-api-key
+LLM_MODEL_NAME=llama-3.1-8b-instant
+
+# File Upload
+UPLOAD_DIR=./uploads
+```
+
+### API Endpoints
+
+#### Authentication
+- `POST /signup` - Create user account
+- `POST /login` - User login (returns JWT token)
+- `GET /protected` - Test protected route
+
+#### Analysis
+- `POST /upload-files` - Upload and analyze documents
+- `POST /run-ai-analysis` - Run AI analysis
+- `GET /` - Health check
+
+## 🚀 Deployment
+
+### Production Setup
+1. **Environment**: Update `.env` for production
+2. **Database**: Use PostgreSQL in production
+3. **Security**: Change SECRET_KEY and use HTTPS
+4. **CORS**: Configure allowed origins
+5. **File Storage**: Use cloud storage for uploads
+
+### Docker Deployment (Optional)
+```dockerfile
+# Backend Dockerfile
+FROM python:3.9
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["python", "main.py"]
+```
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our contributing guidelines for details.
@@ -201,13 +353,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Contact
 
-<!-- - **Demo**: [Live Demo Link] -->
 - **Email**: kumardileep2462000@gmail.com
-<!-- - **LinkedIn**: [Company LinkedIn]
-- **Website**: [Company Website] -->
+- **GitHub**: [Repository Link]
 
 ---
 
-**Ready to revolutionize venture capital analysis? Start your pilot program today!**
+**Ready to revolutionize venture capital analysis with real AI? Start your analysis today!**
 
-<!-- 🏆 *Winner of [Hackathon Name] - Best AI Innovation Award* -->
+🏆 *AI-Powered Investment Analysis System*
