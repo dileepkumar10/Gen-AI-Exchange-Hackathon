@@ -1,6 +1,6 @@
 import os
 
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -22,8 +22,19 @@ class DocumentParserAndLoader:
         self.chunk_overlap = chunk_overlap
         self.vector_db_path = VECTOR_DB_PATH + self.username
 
-    def read_pdf(self):
-        loader = PyPDFLoader(self.file_path)
+    def read_document(self):
+        """Read document based on file extension"""
+        file_ext = os.path.splitext(self.file_path)[1].lower()
+        
+        if file_ext == '.pdf':
+            loader = PyPDFLoader(self.file_path)
+        elif file_ext in ['.doc', '.docx']:
+            loader = Docx2txtLoader(self.file_path)
+        elif file_ext == '.txt':
+            loader = TextLoader(self.file_path, encoding='utf-8')
+        else:
+            raise ValueError(f"Unsupported file type: {file_ext}")
+            
         self.docs = loader.load()
 
     def split_data(self):

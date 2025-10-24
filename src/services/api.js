@@ -1,8 +1,13 @@
 const API_BASE_URL = 'http://127.0.0.1:8000';
+const WS_BASE_URL = 'ws://127.0.0.1:8000';
 
 class ApiService {
   constructor() {
     this.token = localStorage.getItem('access_token');
+    this.websocket = null;
+    this.wsCallbacks = new Map();
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
   }
 
   setToken(token) {
@@ -91,21 +96,7 @@ class ApiService {
   }
 
   async uploadFiles(files) {
-    const formData = new FormData();
-    
-    if (files instanceof FileList || Array.isArray(files)) {
-      Array.from(files).forEach(file => {
-        formData.append('files', file);
-      });
-    } else {
-      formData.append('files', files);
-    }
-
-    return this.request('/upload-files', {
-      method: 'POST',
-      body: formData,
-      isFormData: true,
-    });
+    return this.uploadFilesWithProgress(files);
   }
 
   async runAIAnalysis() {
@@ -116,6 +107,165 @@ class ApiService {
 
   async healthCheck() {
     return this.request('/');
+  }
+
+  // WebSocket Methods
+  connectWebSocket(userId, callbacks = {}) {
+    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+      return; // Already connected
+    }
+
+    const wsUrl = `${WS_BASE_URL}/ws/${userId}`;
+    this.websocket = new WebSocket(wsUrl);
+    
+    this.websocket.onopen = (event) => {
+      console.log('WebSocket connected');
+      this.reconnectAttempts = 0;
+      if (callbacks.onOpen) callbacks.onOpen(event);
+    };
+    
+    this.websocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('WebSocket message:', data);
+        
+        // Call specific callback based on message type
+        const callback = this.wsCallbacks.get(data.type) || callbacks.onMessage;
+        if (callback) {
+          callback(data);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+    
+    this.websocket.onclose = (event) => {
+      console.log('WebSocket disconnected');
+      if (callbacks.onClose) callbacks.onClose(event);
+      
+      // Auto-reconnect logic
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        setTimeout(() => {
+          this.reconnectAttempts++;
+          console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
+          this.connectWebSocket(userId, callbacks);
+        }, 2000 * this.reconnectAttempts);
+      }
+    };
+    
+    this.websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      if (callbacks.onError) callbacks.onError(error);
+    };
+  }
+  
+  disconnectWebSocket() {
+    if (this.websocket) {
+      this.websocket.close();
+      this.websocket = null;
+    }
+  }
+  
+  sendWebSocketMessage(message) {
+    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+      this.websocket.send(JSON.stringify(message));
+    }
+  }
+  
+  onWebSocketMessage(type, callback) {
+    this.wsCallbacks.set(type, callback);
+  }
+  
+  removeWebSocketCallback(type) {
+    this.wsCallbacks.delete(type);
+  }
+
+  // Enhanced upload with real-time progress
+  async uploadFilesWithProgress(files, progressCallback) {
+    const formData = new FormData();
+    
+    if (files instanceof FileList || Array.isArray(files)) {
+      Array.from(files).forEach(file => {
+        formData.append('files', file);
+      });
+    } else {
+      formData.append('files', files);
+    }
+
+    // Setup progress tracking via WebSocket
+    if (progressCallback) {
+      this.onWebSocketMessage('analysis_progress', progressCallback);
+      this.onWebSocketMessage('analysis_completed', progressCallback);
+      this.onWebSocketMessage('analysis_error', progressCallback);
+    }
+
+    return this.request('/upload-files', {
+      method: 'POST',
+      body: formData,
+      isFormData: true,
+    });
+  }
+
+  // Market intelligence methods
+  async getMarketIntelligence(companyName, sector) {
+    return this.request(`/market-intelligence?company=${encodeURIComponent(companyName)}&sector=${encodeURIComponent(sector)}`);
+  }
+
+  async getCompetitiveAnalysis(companyData) {
+    return this.request('/competitive-analysis', {
+      method: 'POST',
+      body: JSON.stringify(companyData),
+    });
+  }
+
+  // Enhanced analysis methods
+  async getAnalysisInsights(analysisId) {
+    return this.request(`/analysis/${analysisId}/insights`);
+  }
+
+  async getPredictiveAnalytics(analysisData) {
+    return this.request('/predictive-analytics', {
+      method: 'POST',
+      body: JSON.stringify(analysisData),
+    });
+  }
+
+  // Export methods
+  async exportAnalysis(analysisId, format = 'pdf') {
+    return this.request(`/export/${analysisId}?format=${format}`, {
+      method: 'GET',
+    });
+  }
+
+  // Live metrics
+  async getLiveMetrics() {
+    return this.request('/metrics/live');
+  }
+
+  // Notification methods
+  async getNotifications() {
+    return this.request('/notifications');
+  }
+
+  async markNotificationRead(notificationId) {
+    return this.request(`/notifications/${notificationId}/read`, {
+      method: 'POST',
+    });
+  }
+
+  // Chat methods
+  async sendChatMessage(message, context = null) {
+    return this.request('/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        context
+      }),
+    });
+  }
+
+  async getChatSuggestions() {
+    return this.request('/chat/suggestions');
   }
 }
 

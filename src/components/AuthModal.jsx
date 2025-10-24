@@ -28,8 +28,10 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
 
     try {
       if (isLogin) {
-        await apiService.login(formData.username, formData.password);
+        const response = await apiService.login(formData.username, formData.password);
+        console.log('Login successful:', response);
         onAuthSuccess();
+        console.log('Auth success callback completed');
       } else {
         await apiService.signup(formData);
         setIsLogin(true);
