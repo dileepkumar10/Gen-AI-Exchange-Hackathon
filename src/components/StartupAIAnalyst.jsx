@@ -1,4 +1,5 @@
   import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Upload, FileText, Mic, Users, TrendingUp, Lightbulb, DollarSign, Star, Download, Settings, Play, Pause, Activity, Globe, BarChart3, Zap, HelpCircle, Building2, LogOut, User, Bell, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import DemoScript from './DemoScript';
@@ -20,9 +21,17 @@ import AnalysisProgress from './AnalysisProgress';
 
 import './animations.css';
 
-const StartupAIAnalyst = () => {
+const StartupAIAnalyst = ({ activeTab: propActiveTab }) => {
   const { isAuthenticated, user, loading, login: authLogin, logout: authLogout } = useAuth();
-  const [activeTab, setActiveTab] = useState('comprehensive');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const getActiveTabFromPath = () => {
+    const path = location.pathname.slice(1);
+    return path || 'upload';
+  };
+  
+  const [activeTab, setActiveTab] = useState(propActiveTab || getActiveTabFromPath());
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [analysisResults, setAnalysisResults] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -328,7 +337,7 @@ const StartupAIAnalyst = () => {
     setDemoMode(false);
     setUploadedFiles([]);
     setAnalysisResults(null);
-    setActiveTab('comprehensive');
+    setActiveTab('upload');
   };
 
 
@@ -842,6 +851,7 @@ const StartupAIAnalyst = () => {
       
       // Switch to analysis tab to show results
       setActiveTab('analysis');
+      navigate('/analysis');
       
       // The AnalysisProgress component will call onComplete when animation finishes
       // Store results temporarily to be set when progress completes
@@ -1090,7 +1100,10 @@ const StartupAIAnalyst = () => {
               ].map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    navigate(tab.id === 'upload' ? '/' : `/${tab.id}`);
+                  }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-left ${
                     activeTab === tab.id 
                       ? 'bg-white/20 text-white border-l-4 border-purple-400' 
@@ -1627,7 +1640,10 @@ const StartupAIAnalyst = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">No Memo Available</h3>
                 <p className="text-purple-200 mb-6">Run an analysis to generate an investment memo.</p>
                 <button
-                  onClick={() => setActiveTab('comprehensive')}
+                  onClick={() => {
+                    setActiveTab('comprehensive');
+                    navigate('/comprehensive');
+                  }}
                   className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg"
                 >
                   Start Analysis

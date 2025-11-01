@@ -215,7 +215,9 @@ const AIChatInterface = ({ analysisResults, isOpen, onToggle }) => {
                         ? 'bg-purple-500 text-white'
                         : 'bg-white/10 text-white'
                     }`}>
-                      <p className="text-xs md:text-sm whitespace-pre-wrap overflow-hidden">{message.content}</p>
+                      <p className="text-xs md:text-sm whitespace-pre-wrap overflow-hidden">
+                        {message.content.replace(/\*\*(.*?)\*\*/g, '$1')}
+                      </p>
                     </div>
                   </div>
                 </motion.div>
