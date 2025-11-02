@@ -1,5 +1,5 @@
-const API_BASE_URL = 'http://127.0.0.1:8000';
-const WS_BASE_URL = 'ws://127.0.0.1:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://gen-ai-exchange-hackathon-8y50.onrender.com';
+const WS_BASE_URL = process.env.REACT_APP_WS_URL || 'wss://gen-ai-exchange-hackathon-8y50.onrender.com';
 
 class ApiService {
   constructor() {
